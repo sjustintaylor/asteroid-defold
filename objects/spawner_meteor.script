@@ -1,0 +1,27 @@
+function randomPosition()
+	return vmath.vector3(math.random(0, sys.get_config_int("display.width", 1)),
+		math.random(0, sys.get_config_int("display.height", 1)), 0)
+end
+
+function init(self)
+	-- Seed math.random
+	math.randomseed(os.time())
+
+	-- Spawn meteors
+	self.sml_scale = 1.75
+	self.lg_scale = 2.5
+
+	for i = 1, 10 do
+		factory.create("/game_manager#fac_asteroid_lg", randomPosition(), nil, nil, self.lg_scale)
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("break_apart") then
+		factory.create("/game_manager#fac_asteroid_sml", message.position, nil, nil, self.sml_scale)
+		factory.create("/game_manager#fac_asteroid_sml", message.position, nil, nil, self.sml_scale)
+
+		-- Replace big asteroid
+		factory.create("/game_manager#fac_asteroid_lg", randomPosition(), nil, nil, self.lg_scale)
+	end
+end

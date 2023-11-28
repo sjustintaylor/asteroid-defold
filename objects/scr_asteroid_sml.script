@@ -1,0 +1,73 @@
+go.property("velocityLower", -200)
+go.property("velocityUpper", 200)
+
+function init(self)
+	-- setup rotation, velocity, and direction
+
+	-- random rotation
+
+	self.rotation = vmath.quat_rotation_z((math.random()) * 3.1415)
+	self.velocity = getRandomVelocity(self.velocityLower, self.velocityUpper)
+end
+
+function getRandomVelocity(boundA, boundB)
+	return vmath.vector3(math.random(boundA, boundB), math.random(boundA, boundB), 0)
+end
+
+function update(self, dt)
+	-- Update position, rotation, etc
+	-- Wrap the screen, same as the player object
+
+	-- Rotation
+	local currentRotation = go.get_rotation()
+	currentRotation = vmath.slerp(dt, currentRotation, currentRotation * self.rotation)
+
+	go.set_rotation(currentRotation)
+
+	-- Position
+	---@type vector3
+	local pos = go.get_position() + self.velocity * dt
+
+	---@type vector3
+	local size = vmath.mul_per_elem(go.get("#spr_sml_asteroid", "size"), go.get_scale("#spr_sml_asteroid"))
+
+	local width = sys.get_config_int("display.width", 1)
+	local height = sys.get_config_int("display.height", 1)
+
+	local yBound1 = pos.y > (size.y * 2.5) + height
+	local yBound2 = pos.y < 0 - (size.y * 2.5)
+	if yBound1 or yBound2 then
+		pos.x = math.random(0, width)
+		self.rotation = vmath.quat_rotation_z((math.random()) * 3.1415)
+		self.velocity = getRandomVelocity(self.velocityLower, self.velocityUpper)
+	end
+	if yBound1 then
+		pos.y = 0 - (size.y * 2)
+	elseif yBound2 then
+		pos.y = (size.y * 2) + height
+	end
+
+	local xBound1 = pos.x > (size.x * 2.5) + height
+	local xBound2 = pos.x < 0 - (size.x * 2.5)
+	if xBound1 or xBound2 then
+		pos.y = math.random(0, height)
+		self.rotation = vmath.quat_rotation_z((math.random()) * 3.1415)
+		self.velocity = getRandomVelocity(self.velocityLower, self.velocityUpper)
+	end
+	if xBound1 then
+		pos.x = 0 - (size.x * 2)
+	elseif xBound2 then
+		pos.x = (size.x * 2) + width
+	end
+
+	go.set_position(pos)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("collision_response") and message.other_group == hash("bullet") then
+		particlefx.play("#explosion")
+		sound.play("/game_manager#explosionCrunch_003")
+		go.delete()
+		go.delete(message.other_id)
+	end
+end

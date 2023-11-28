@@ -1,0 +1,3 @@
+prototype: "/objects/obj_asteroid_sml.go"
+load_dynamically: false
+dynamic_prototype: false
